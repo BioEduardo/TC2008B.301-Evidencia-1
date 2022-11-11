@@ -11,8 +11,8 @@
 from mesa import Model, DataCollector
 from mesa.time import SimultaneousActivation
 from mesa.space import MultiGrid
-
-from robot_limpieza import Robot, Basura
+from robot_limpieza import *
+import math
 
 class AlmacenModelo(Model):
 
@@ -27,6 +27,7 @@ class AlmacenModelo(Model):
         self.schedule = SimultaneousActivation(self)
         self.running = True
         self.cont_time = 0
+        self.num_shelfs = math.ceil(self.num_box / 5)
 
         c = 0
         for _ in range(self.num_robots):
@@ -42,13 +43,21 @@ class AlmacenModelo(Model):
             y = self.random.randrange(self.grid.height)
             cellmates = self.grid.get_cell_list_contents([(x,y)])
             if (not cellmates):
-                basura = Basura(c, self)            
+                basura = Caja(c, self)            
                 self.schedule.add(basura)
                 self.grid.place_agent(basura, (x, y))
                 c += 1
+        while((c - self.num_robots - self.num_box) < self.num_shelfs):
+            x = self.random.randrange(self.grid.width)
+            y = self.random.randrange(self.grid.height)
+            cellmates = self.grid.get_cell_list_contents([(x,y)])
+            if (not cellmates):
+                estante = Estante(c, self)            
+                self.schedule.add(estante)
+                self.grid.place_agent(estante, (x, y))
+                c += 1
 
-    # Checa si se ha alcanzado el limite de tiempo establecido
-    
+    # Checa si se ha alcanzado el limite de tiempo establecido    
     
     # Checa si toda la basura ha sido limpiada
 

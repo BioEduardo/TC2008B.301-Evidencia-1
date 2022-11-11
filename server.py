@@ -19,25 +19,26 @@ def agent_portrayal(agent):
                  "r": 0.5}
     
     if(isinstance(agent, Robot)):
-        portrayal["Color"] = "green"
+        portrayal["Color"] = agent.color
         portrayal["Layer"] = 0
         portrayal["text_color"] = "white"
         portrayal["text"] = agent.movements
     
-    if(isinstance(agent, Basura)):
-        if (agent.state == 1):
-            portrayal["Color"] = "blue"
+    if(isinstance(agent, Caja)):
+            portrayal["Color"] = agent.color
             portrayal["Layer"] = 0
             portrayal["r"] = 0.2
-        else:
-            portrayal["Color"] = "red"
-            portrayal["Layer"] = 0
-            portrayal["r"] = 0.2
+
+    if (isinstance(agent, Estante)):
+        portrayal["Color"] = "black"
+        portrayal["Layer"] = 0
+        portrayal["r"] = 0.5
+        portrayal["text_color"] = "white"
+        portrayal["text"] = agent.num_boxes
 
     return portrayal
 
-numeroRobots = 10
-Cajas = 5
+Cajas = 10
 ancho = 10
 alto = 10
 tiempoMaximo = 200
