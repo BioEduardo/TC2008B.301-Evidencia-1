@@ -41,7 +41,7 @@ class AlmacenModelo(Model):
             x = self.random.randrange(self.grid.width)
             y = self.random.randrange(self.grid.height)
             cellmates = self.grid.get_cell_list_contents([(x,y)])
-            if (cellmates == 0):
+            if (not cellmates):
                 basura = Basura(c, self)            
                 self.schedule.add(basura)
                 self.grid.place_agent(basura, (x, y))
