@@ -10,7 +10,7 @@
 #----------------------------------------------------------
 import mesa
 from model import AlmacenModelo
-from robot_limpieza import *
+from agents import *
 
 # Funcion que dibuja a cada uno de los agentes
 def agent_portrayal(agent):
@@ -22,7 +22,7 @@ def agent_portrayal(agent):
         portrayal["Color"] = agent.color
         portrayal["Layer"] = 0
         portrayal["text_color"] = "white"
-        portrayal["text"] = agent.movements
+        portrayal["text"] = agent.has_box
     
     if(isinstance(agent, Caja)):
             portrayal["Color"] = agent.color
@@ -34,11 +34,11 @@ def agent_portrayal(agent):
         portrayal["Layer"] = 0
         portrayal["r"] = 0.5
         portrayal["text_color"] = "white"
-        portrayal["text"] = agent.num_boxes
+        portrayal["text"] = agent.current_boxes
 
     return portrayal
 
-Cajas = 10
+Cajas = 40
 ancho = 10
 alto = 10
 tiempoMaximo = 200
