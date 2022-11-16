@@ -27,24 +27,35 @@ class Robot(Agent):
             moore=True,
             include_center=False)
         new_position = self.random.choice(possible_steps)
+        cellmates = self.model.grid.get_cell_list_contents([new_position])
+        for element in cellmates:
+            if isinstance(element, Robot) or isinstance(element, Pared) or isinstance(element, Puerta):
+                new_position = self.pos
         self.model.grid.move_agent(self, new_position)
 
     def moveToEstante(self):
         posX = self.pos[0]
         posY = self.pos[1]
-        if posX != 0 and posY != 0:
+        if posX != 1 and posY != 1:
             new_position = (posX-1,posY)
-        elif posX == 0 and posY != 0:
+        elif posX == 1 and posY != 1:
             new_position = (posX,posY-1)
-        elif posX == 0 and posY == 0:
+        elif posX == 1 and posY == 1:
             new_position = (posX+1,posY)
-        elif posY == 0:
+        elif posY == 1:
             new_position = (posX+1,posY)
         else:
             new_position = (posX+1,posY)
+
+        cellmates = self.model.grid.get_cell_list_contents([new_position])
+        for element in cellmates:
+            if isinstance(element, Robot) or isinstance(element, Pared) or isinstance(element, Puerta):
+                new_position = self.pos
+
         self.model.grid.move_agent(self, new_position)
     
     def colocarCajaEstante(self, estante):
+        self.model.boxes_recolected += 1
         estante.current_boxes += 1
         self.color = "green"        
         self.has_box = False
@@ -79,13 +90,13 @@ class Caja(Agent):
     # Inicializa sus valores de instacia
     def __init__(self, unique_id, model, init_status=NO_RECOGIDO):
         super().__init__(unique_id, model)
-        self.state = 0
         self.color = "red"
         self.status = init_status
 
     # Representa un paso
     def step(self):
         pass
+
 
 class Estante(Agent):
 
@@ -96,5 +107,27 @@ class Estante(Agent):
         self.max_boxes = 5
     
     # Representa un paso
+    def step(self):
+        pass
+
+
+class Pared(Agent):
+    """
+    Pared agent. Just to add Pared to the grid.
+    """
+    def __init__(self, unique_id, model):
+        super().__init__(unique_id, model)
+
+    def step(self):
+        pass
+
+
+class Puerta(Agent):
+    """
+    Puerta agent. Just to add Puerta to the grid.
+    """
+    def __init__(self, unique_id, model):
+        super().__init__(unique_id, model)
+
     def step(self):
         pass

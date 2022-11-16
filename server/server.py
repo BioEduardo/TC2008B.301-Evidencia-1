@@ -1,54 +1,91 @@
-#----------------------------------------------------------
-# M1. Actividad
-# Este programa grafica visualmente el modelo y los agentes
-# interacturando
-# 
-# Date: 11-Nov-2022
-# Authors:
-#           Eduardo Joel Cortez Valente A01746664
-#           Paulo Ogando Gulias A01751587
-#----------------------------------------------------------
-import mesa
-from model import AlmacenModelo
-from agents import *
+# TC2008B. Sistemas Multiagentes y Gráficas Computacionales
+# Python flask server to interact with Unity. Based on the code provided by Sergio Ruiz.
+# Octavio Navarro. October 2021
 
-# Funcion que dibuja a cada uno de los agentes
-def agent_portrayal(agent):
-    portrayal = {"Shape": "circle",
-                 "Filled": "true",
-                 "r": 0.5}
-    
-    if(isinstance(agent, Robot)):
-        portrayal["Color"] = agent.color
-        portrayal["Layer"] = 0
-        portrayal["text_color"] = "white"
-        portrayal["text"] = agent.has_box
-    
-    if(isinstance(agent, Caja)):
-            portrayal["Color"] = agent.color
-            portrayal["Layer"] = 0
-            portrayal["r"] = 0.2
+from flask import Flask, request, jsonify
+from model import *
 
-    if (isinstance(agent, Estante)):
-        portrayal["Color"] = "black"
-        portrayal["Layer"] = 0
-        portrayal["r"] = 0.5
-        portrayal["text_color"] = "white"
-        portrayal["text"] = agent.current_boxes
-
-    return portrayal
-
-Cajas = 40
+# Size of the board:
+cajas = 40
 ancho = 10
 alto = 10
 tiempoMaximo = 200
 
-# Instantiate a canvas grid with its width and height in cells, and in pixels
-grid = mesa.visualization.CanvasGrid(agent_portrayal, ancho, ancho, 500, 500)
+randomModel = None
+currentStep = 0
 
-server = mesa.visualization.ModularServer(AlmacenModelo,
-                       [grid],
-                       "AlmacenModelo",
-                       {"tiempoMaximo":tiempoMaximo, "width":ancho, "height":alto, "num_box":Cajas})
-server.port = 8521  # The default
-server.launch()
+app = Flask("Traffic example")
+
+# @app.route('/', methods=['POST', 'GET'])
+
+@app.route('/init', methods=['POST', 'GET'])
+def initModel():
+    global currentStep, randomModel, number_agents, width, height
+
+    if request.method == 'POST':
+        number_agents = int(request.form.get('NAgents'))
+        width = int(request.form.get('width'))
+        height = int(request.form.get('height'))
+        currentStep = 0
+
+        print(request.form)
+        print(number_agents, width, height)
+        randomModel = AlmacenModelo(tiempoMaximo, alto, ancho, cajas)
+
+        return jsonify({"message":"Parameters recieved, model initiated."})
+
+@app.route('/getAgents', methods=['GET'])
+def getRobots():
+    global randomModel
+
+    if request.method == 'GET':
+        robotPositions = [{"id": str(a.unique_id), "x": x, "y":1, "z":z, "has_box":a.has_box} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Robot)]
+
+        return jsonify({'positions':robotPositions})
+
+@app.route('/getObstacles', methods=['GET'])
+def getEstantes():
+    global randomModel
+
+    if request.method == 'GET':
+        estantePositions = [{"id": str(a.unique_id), "x": x, "y":1, "z":z, "status":a.current_boxes} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Estante)]
+
+        return jsonify({'positions':estantePositions})
+
+@app.route('/getCajas', methods=['GET'])
+def getCajas():
+    global randomModel
+
+    if request.method == 'GET':
+        cajaPosition = [{"id": str(a.unique_id), "x": x, "y":1, "z":z, "status":a.status} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Caja)]
+
+        return jsonify({'positions':cajaPosition})
+
+@app.route('/getPuertas', methods=['GET'])
+def getPuertas():
+    global randomModel
+
+    if request.method == 'GET':
+        cajaPosition = [{"id": str(a.unique_id), "x": x, "y":1, "z":z} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Puerta)]
+
+        return jsonify({'positions':cajaPosition})
+
+@app.route('/getParedes', methods=['GET'])
+def getParedes():
+    global randomModel
+
+    if request.method == 'GET':
+        cajaPosition = [{"id": str(a.unique_id), "x": x, "y":1, "z":z} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Pared)]
+
+        return jsonify({'positions':cajaPosition})
+
+@app.route('/update', methods=['GET'])
+def updateModel():
+    global currentStep, randomModel
+    if request.method == 'GET':
+        randomModel.step()
+        currentStep += 1
+        return jsonify({'message':f'Model updated to step {currentStep}.', 'currentStep':currentStep})
+
+if __name__=='__main__':
+    app.run(host="localhost", port=8585, debug=True)
