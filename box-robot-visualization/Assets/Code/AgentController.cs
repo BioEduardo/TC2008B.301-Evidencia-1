@@ -128,8 +128,8 @@ public class AgentController : MonoBehaviour
         agents = new Dictionary<string, GameObject>();
         robotsCaja = new Dictionary<string, GameObject>();
 
-        floor.transform.localScale = new Vector3((float)width/10, 1, (float)height/10);
-        floor.transform.localPosition = new Vector3((float)width/2-0.5f, 0, (float)height/2-0.5f);
+        floor.transform.localScale = new Vector3((float)width/2, 1, (float)height/2);
+        floor.transform.localPosition = new Vector3((float)width/2 - .6f, 1, (float)height/2 +.4f);
         
         timer = timeToUpdate;
 
@@ -228,10 +228,12 @@ public class AgentController : MonoBehaviour
         else 
         {
             robotsData = JsonUtility.FromJson<RobotsData>(www.downloadHandler.text);
+            Debug.Log(www.downloadHandler.text);
 
             foreach(RobotData robot in robotsData.positions)
             {
                 Vector3 newRobotPosition = new Vector3(robot.x, robot.y, robot.z);
+                
 
                     if(!started)
                     {
@@ -273,24 +275,25 @@ public class AgentController : MonoBehaviour
         else 
         {
             cajasData = JsonUtility.FromJson<CajasData>(www.downloadHandler.text);
+            Debug.Log(cajasData.positions);
 
-            foreach(CajaData agent in cajasData.positions)
+            foreach(CajaData caja in cajasData.positions)
             {
-                Vector3 newAgentPosition = new Vector3(agent.x, agent.y, agent.z);
+                Vector3 newCajaPosition = new Vector3(caja.x, caja.y, caja.z);
 
                     if(!started)
                     {
-                        prevPositions[agent.id] = newAgentPosition;
-                        agents[agent.id] = Instantiate(cajaPrefab, newAgentPosition, Quaternion.identity);
+                        prevPositions[caja.id] = newCajaPosition;
+                        agents[caja.id] = Instantiate(cajaPrefab, newCajaPosition, Quaternion.identity);
                     }
                     else
                     {
                         Vector3 currentPosition = new Vector3();
-                        if(currPositions.TryGetValue(agent.id, out currentPosition))
-                            prevPositions[agent.id] = currentPosition;
-                        currPositions[agent.id] = newAgentPosition;
-                        if(agent.recogido) agents[agent.id].SetActive(false);
-                        else agents[agent.id].SetActive(true);
+                        if(currPositions.TryGetValue(caja.id, out currentPosition))
+                            prevPositions[caja.id] = currentPosition;
+                        currPositions[caja.id] = newCajaPosition; 
+                        // if(agent.recogido) agents[agent.id].SetActive(false);
+                        // else agents[agent.id].SetActive(true);
                     }
             }
 
@@ -314,7 +317,7 @@ public class AgentController : MonoBehaviour
 
             foreach(EstanteData estante in estanteData.positions)
             {
-                Instantiate(estantePrefab, new Vector3(estante.x, estante.y, estante.z), Quaternion.identity);
+                Instantiate(estantePrefab, new Vector3(estante.x, estante.y, estante.z), estantePrefab.transform.rotation);
             }
         }
     }
@@ -329,6 +332,8 @@ public class AgentController : MonoBehaviour
         else 
         {
             paredesData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+            Debug.Log(paredesData.positions);
+        
 
             foreach(AgentData obstacle in paredesData.positions)
             {
@@ -347,6 +352,7 @@ public class AgentController : MonoBehaviour
         else 
         {
             puertasData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+            Debug.Log(puertasData.positions);
 
             foreach(AgentData puerta in puertasData.positions)
             {
