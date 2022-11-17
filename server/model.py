@@ -29,6 +29,7 @@ class AlmacenModelo(Model):
         self.running = True
         self.cont_time = 0
         self.num_shelfs = math.ceil(self.num_box / 5)
+        self.pos_estantes = set()
 
         border = [(x,y) for y in range(height) for x in range(width) if y in [0, height-1] or x in [0, width - 1]]
         doors = [(width-1,math.ceil((height-1)/2)),(width-1,math.ceil((height-1)/2)-1)]
@@ -50,23 +51,23 @@ class AlmacenModelo(Model):
 
         numEstante = 0
         while(numEstante < self.num_shelfs):
-            x = 1 + numEstante
-            y = 1
-            if x >= self.ancho - 1:
-                x = 1
-                y = 4 + (numEstante - self.ancho)
-            estante = Estante(c, self)            
-            self.schedule.add(estante)
-            self.grid.place_agent(estante, (x, y))
-            numEstante += 1
-            c += 1
+            x = self.random.randrange(self.grid.width)
+            y = self.random.randrange(self.grid.height)
+            cellmates = self.grid.get_cell_list_contents([(x,y)])
+            if (not cellmates):
+                estante = Estante(c, self)            
+                self.schedule.add(estante)
+                self.grid.place_agent(estante, (x, y))
+                self.pos_estantes.add((x,y))
+                numEstante += 1
+                c += 1
 
         numCajas = 0
         while(numCajas < self.num_box):
             x = self.random.randrange(self.grid.width)
             y = self.random.randrange(self.grid.height)
             cellmates = self.grid.get_cell_list_contents([(x,y)])
-            if (not cellmates) and y != 1:
+            if (not cellmates):
                 basura = Caja(c, self)            
                 self.schedule.add(basura)
                 self.grid.place_agent(basura, (x, y))
@@ -96,4 +97,5 @@ class AlmacenModelo(Model):
     # Representa un paso del modelo
     def step(self):
         self.check_steps()
+        print(self.pos_estantes)
         self.schedule.step()
