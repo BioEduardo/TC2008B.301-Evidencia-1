@@ -6,13 +6,13 @@ from flask import Flask, request, jsonify
 from model import *
 
 # Size of the board:
-cajas = 40
-ancho = 10
-alto = 10
-tiempoMaximo = 200
+# cajas = 40
+# ancho = 10
+# alto = 10
+# tiempoMaximo = 200
 
-randomModel = None
-currentStep = 0
+# randomModel = None
+# currentStep = 0
 
 app = Flask("Traffic example")
 
@@ -23,9 +23,10 @@ def initModel():
     global currentStep, randomModel, number_agents, width, height
 
     if request.method == 'POST':
-        number_agents = int(request.form.get('NAgents'))
-        width = int(request.form.get('width'))
-        height = int(request.form.get('height'))
+        cajas = int(request.form.get('NAgents'))
+        ancho = int(request.form.get('width'))
+        alto = int(request.form.get('height'))
+        tiempoMaximo = int(request.form.get('maxtime'))
         currentStep = 0
 
         print(request.form)
@@ -34,7 +35,7 @@ def initModel():
 
         return jsonify({"message":"Parameters recieved, model initiated."})
 
-@app.route('/getAgents', methods=['GET'])
+@app.route('/getRobots', methods=['GET'])
 def getRobots():
     global randomModel
 
@@ -43,7 +44,7 @@ def getRobots():
 
         return jsonify({'positions':robotPositions})
 
-@app.route('/getObstacles', methods=['GET'])
+@app.route('/getEstantes', methods=['GET'])
 def getEstantes():
     global randomModel
 
@@ -66,18 +67,18 @@ def getPuertas():
     global randomModel
 
     if request.method == 'GET':
-        cajaPosition = [{"id": str(a.unique_id), "x": x, "y":1, "z":z} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Puerta)]
+        puertasPosition = [{"id": str(a.unique_id), "x": x, "y":1, "z":z} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Puerta)]
 
-        return jsonify({'positions':cajaPosition})
+        return jsonify({'positions':puertasPosition})
 
 @app.route('/getParedes', methods=['GET'])
 def getParedes():
     global randomModel
 
     if request.method == 'GET':
-        cajaPosition = [{"id": str(a.unique_id), "x": x, "y":1, "z":z} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Pared)]
+        paredesPosition = [{"id": str(a.unique_id), "x": x, "y":1, "z":z} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Pared)]
 
-        return jsonify({'positions':cajaPosition})
+        return jsonify({'positions':paredesPosition})
 
 @app.route('/update', methods=['GET'])
 def updateModel():

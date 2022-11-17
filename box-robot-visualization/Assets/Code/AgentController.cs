@@ -10,64 +10,107 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 [Serializable]
-public class RobotData
+public class AgentData
 {
     public string id;
     public float x, y, z;
-    public bool has_box;
 
-    public RobotData(string id, float x, float y, float z, bool has_box)
+    public AgentData(string id, float x, float y, float z)
     {
         this.id = id;
         this.x = x;
         this.y = y;
         this.z = z;
+    }
+}
+
+[Serializable]
+public class RobotData : AgentData
+{
+    public bool has_box;
+
+    public RobotData(string id, float x, float y, float z, bool has_box) : base(id, x, y, z)
+    {
         this.has_box = has_box;
     }
 }
 
-[Serializable]
-public class ObstacleData
+public class CajaData : AgentData
 {
-    public string id;
-    public float x, y, z;
+    public bool recogido;
 
-    public ObstacleData(string id, float x, float y, float z)
+    public CajaData(string id, float x, float y, float z, bool has_box) : base(id, x, y, z)
     {
-        this.id = id;
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this.recogido = recogido;
+    }
+}
+
+[Serializable]
+public class EstanteData
+{
+    public int boxes;
+
+    public EstanteData(string id, float x, float y, float z, int boxes) : base(id, x, y, z)
+    {
+        this.boxes = boxes;
     }
 }
 
 [Serializable]
 
-public class AgentsData
+public class RobotsData
 {
     public List<RobotData> positions;
-    public List<ObstacleData> positionsO;
 
-    public AgentsData() => this.positions = new List<RobotData>();
-    public AgentsData() => this.positionsO = new List<ObstacleData>();
+    public RobotsData() => this.positions = new List<RobotData>();
+}
+
+[Serializable]
+
+public class CajasData
+{
+    public List<CajaData> positions;
+
+    public CajasData() => this.positions = new List<RobotData>();
+}
+
+[Serializable]
+public class EstantesData
+{
+    public List<EstanteData> positions;
+
+    public EstantesData() => this.positions = new List<EstanteData>();
+}
+
+public class AgentsData
+{
+    public List<AgentData> positions;
+
+    public AgentsData() => this.positions = new List<AgentData>();
 }
 
 public class AgentController : MonoBehaviour
 {
     // private string url = "https://agents.us-south.cf.appdomain.cloud/";
     string serverUrl = "http://localhost:8585";
-    string getAgentsEndpoint = "/getAgents";
-    string getObstaclesEndpoint = "/getObstacles";
+    string getRobotsEndpoint = "/getRobots";
+    string getEstantesEndpoint = "/getEstantes";
+    string getCajasEndpoint = "/getCajas";
+    string getPuertasEndpoint = "/getPuertas";
+    string getParedesEndpoint = "/getParedes";
     string sendConfigEndpoint = "/init";
     string updateEndpoint = "/update";
-    AgentsData agentsData, obstacleData, cajasData, puertasData, estanteData;
-    Dictionary<string, GameObject> agents;
+    AgentsData puertasData, paredesData;
+    RobotsData robotsData;
+    CajasData cajasData;
+    EstantesData estanteData;
+    Dictionary<string, GameObject> robots, paredes, cajas, puertas, estantes;
     Dictionary<string, Vector3> prevPositions, currPositions;
 
     bool updated = false, started = false;
 
-    public GameObject agentPrefab, obstaclePrefab, floor;
-    public int NAgents, width, height;
+    public GameObject robotPrefab, robotboxPrefab, paredesPrefab, cajaPrefab, estantePrefab, puertaPrefab, floor;
+    public int NAgents, width, height, maxtime;
     public float timeToUpdate = 5.0f;
     private float timer, dt;
 
@@ -75,6 +118,9 @@ public class AgentController : MonoBehaviour
     {
         agentsData = new AgentsData();
         obstacleData = new AgentsData();
+        puertasData = new AgentsData();
+        paredesData = new AgentsData();
+        estantesData = new AgentsData();
 
         prevPositions = new Dictionary<string, Vector3>();
         currPositions = new Dictionary<string, Vector3>();
@@ -130,6 +176,7 @@ public class AgentController : MonoBehaviour
         else 
         {
             StartCoroutine(GetAgentsData());
+            StartCoroutine(GetCajasData());
         }
     }
 
@@ -140,6 +187,7 @@ public class AgentController : MonoBehaviour
         form.AddField("NAgents", NAgents.ToString());
         form.AddField("width", width.ToString());
         form.AddField("height", height.ToString());
+        form.AddField("maxtime", maxtime.ToString());
 
         UnityWebRequest www = UnityWebRequest.Post(serverUrl + sendConfigEndpoint, form);
         www.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -154,14 +202,17 @@ public class AgentController : MonoBehaviour
         {
             Debug.Log("Configuration upload complete!");
             Debug.Log("Getting Agents positions");
-            StartCoroutine(GetAgentsData());
-            StartCoroutine(GetObstacleData());
+            StartCoroutine(GetRobotsData());
+            StartCoroutine(GetParedesData());
+            StartCoroutine(GetCajasData());
+            StartCoroutine(GetEstantesData());
+            StartCoroutine(GetPuertasData());
         }
     }
 
-    IEnumerator GetAgentsData() 
+    IEnumerator GetRobotsData() 
     {
-        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getAgentsEndpoint);
+        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getRobotsEndpoint);
         yield return www.SendWebRequest();
  
         if (www.result != UnityWebRequest.Result.Success)
@@ -193,9 +244,43 @@ public class AgentController : MonoBehaviour
         }
     }
 
-    IEnumerator GetObstacleData() 
+    IEnumerator GetCajasData() 
     {
-        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getObstaclesEndpoint);
+        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getCajasEndpoint);
+        yield return www.SendWebRequest();
+ 
+        if (www.result != UnityWebRequest.Result.Success)
+            Debug.Log(www.error);
+        else 
+        {
+            agentsData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+
+            foreach(AgentData agent in agentsData.positions)
+            {
+                Vector3 newAgentPosition = new Vector3(agent.x, agent.y, agent.z);
+
+                    if(!started)
+                    {
+                        prevPositions[agent.id] = newAgentPosition;
+                        agents[agent.id] = Instantiate(cajaPrefab, newAgentPosition, Quaternion.identity);
+                    }
+                    else
+                    {
+                        Vector3 currentPosition = new Vector3();
+                        if(currPositions.TryGetValue(agent.id, out currentPosition))
+                            prevPositions[agent.id] = currentPosition;
+                        currPositions[agent.id] = newAgentPosition;
+                    }
+            }
+
+            updated = true;
+            if(!started) started = true;
+        }
+    }
+
+    IEnumerator GetEstantesData() 
+    {
+        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getEstantesEndpoint);
         yield return www.SendWebRequest();
  
         if (www.result != UnityWebRequest.Result.Success)
@@ -208,7 +293,47 @@ public class AgentController : MonoBehaviour
 
             foreach(AgentData obstacle in obstacleData.positions)
             {
-                Instantiate(obstaclePrefab, new Vector3(obstacle.x, obstacle.y, obstacle.z), Quaternion.identity);
+                Instantiate(estantePrefab, new Vector3(obstacle.x, obstacle.y, obstacle.z), Quaternion.identity);
+            }
+        }
+    }
+
+    IEnumerator GetParedesData() 
+    {
+        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getParedesEndpoint);
+        yield return www.SendWebRequest();
+ 
+        if (www.result != UnityWebRequest.Result.Success)
+            Debug.Log(www.error);
+        else 
+        {
+            obstacleData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+
+            Debug.Log(obstacleData.positions);
+
+            foreach(AgentData obstacle in obstacleData.positions)
+            {
+                Instantiate(paredesPrefab, new Vector3(obstacle.x, obstacle.y, obstacle.z), Quaternion.identity);
+            }
+        }
+    }
+
+    IEnumerator GetPuertasData() 
+    {
+        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getPuertasEndpoint);
+        yield return www.SendWebRequest();
+ 
+        if (www.result != UnityWebRequest.Result.Success)
+            Debug.Log(www.error);
+        else 
+        {
+            obstacleData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+
+            Debug.Log(obstacleData.positions);
+
+            foreach(AgentData obstacle in obstacleData.positions)
+            {
+                Instantiate(puertaPrefab, new Vector3(obstacle.x, obstacle.y, obstacle.z), Quaternion.identity);
             }
         }
     }
