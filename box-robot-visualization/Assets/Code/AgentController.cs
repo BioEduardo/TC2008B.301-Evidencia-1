@@ -37,9 +37,9 @@ public class RobotData : AgentData
 
 public class CajaData : AgentData
 {
-    public bool recogido;
+    public int recogido;
 
-    public CajaData(string id, float x, float y, float z, bool recogido) : base(id, x, y, z)
+    public CajaData(string id, float x, float y, float z, int recogido) : base(id, x, y, z)
     {
         this.recogido = recogido;
     }
@@ -184,7 +184,7 @@ public class AgentController : MonoBehaviour
         else 
         {
             StartCoroutine(GetRobotsData());
-            StartCoroutine(GetCajasData());
+            // StartCoroutine(GetCajasData());
         }
     }
 
@@ -265,6 +265,43 @@ public class AgentController : MonoBehaviour
         }
     }
 
+    // IEnumerator GetCajasData() 
+    // {
+    //     UnityWebRequest www = UnityWebRequest.Get(serverUrl + getCajasEndpoint);
+    //     yield return www.SendWebRequest();
+ 
+    //     if (www.result != UnityWebRequest.Result.Success)
+    //         Debug.Log(www.error);
+    //     else 
+    //     {
+    //         cajasData = JsonUtility.FromJson<CajasData>(www.downloadHandler.text);
+    //         Debug.Log(cajasData.positions);
+
+    //         foreach(CajaData caja in cajasData.positions)
+    //         {
+    //             Vector3 newCajaPosition = new Vector3(caja.x, caja.y, caja.z);
+
+    //                 if(!started)
+    //                 {
+    //                     prevPositions[caja.id] = newCajaPosition;
+    //                     agents[caja.id] = Instantiate(cajaPrefab, newCajaPosition, Quaternion.identity);
+    //                 }
+    //                 else
+    //                 {
+    //                     Vector3 currentPosition = new Vector3();
+    //                     if(currPositions.TryGetValue(caja.id, out currentPosition))
+    //                         prevPositions[caja.id] = currentPosition;
+    //                     currPositions[caja.id] = newCajaPosition; 
+    //                     // if(agent.recogido) agents[agent.id].SetActive(false);
+    //                     // else agents[agent.id].SetActive(true);
+    //                 }
+    //         }
+
+    //         updated = true;
+    //         if(!started) started = true;
+    //     }
+    // }
+
     IEnumerator GetCajasData() 
     {
         UnityWebRequest www = UnityWebRequest.Get(serverUrl + getCajasEndpoint);
@@ -275,30 +312,13 @@ public class AgentController : MonoBehaviour
         else 
         {
             cajasData = JsonUtility.FromJson<CajasData>(www.downloadHandler.text);
+
             Debug.Log(cajasData.positions);
 
             foreach(CajaData caja in cajasData.positions)
             {
-                Vector3 newCajaPosition = new Vector3(caja.x, caja.y, caja.z);
-
-                    if(!started)
-                    {
-                        prevPositions[caja.id] = newCajaPosition;
-                        agents[caja.id] = Instantiate(cajaPrefab, newCajaPosition, Quaternion.identity);
-                    }
-                    else
-                    {
-                        Vector3 currentPosition = new Vector3();
-                        if(currPositions.TryGetValue(caja.id, out currentPosition))
-                            prevPositions[caja.id] = currentPosition;
-                        currPositions[caja.id] = newCajaPosition; 
-                        // if(agent.recogido) agents[agent.id].SetActive(false);
-                        // else agents[agent.id].SetActive(true);
-                    }
+                Instantiate(cajaPrefab, new Vector3(caja.x, caja.y, caja.z), Quaternion.identity);
             }
-
-            updated = true;
-            if(!started) started = true;
         }
     }
 
