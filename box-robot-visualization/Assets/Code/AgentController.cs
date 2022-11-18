@@ -35,13 +35,14 @@ public class RobotData : AgentData
     }
 }
 
+[Serializable]
 public class CajaData : AgentData
 {
-    public int recogido;
+    public int status;
 
-    public CajaData(string id, float x, float y, float z, int recogido) : base(id, x, y, z)
+    public CajaData(string id, float x, float y, float z, int status) : base(id, x, y, z)
     {
-        this.recogido = recogido;
+        this.status = status;
     }
 }
 
@@ -82,6 +83,7 @@ public class EstantesData
     public EstantesData() => this.positions = new List<EstanteData>();
 }
 
+[Serializable]
 public class AgentsData
 {
     public List<AgentData> positions;
@@ -129,7 +131,8 @@ public class AgentController : MonoBehaviour
         robotsCaja = new Dictionary<string, GameObject>();
 
         floor.transform.localScale = new Vector3((float)width/2, 1, (float)height/2);
-        floor.transform.localPosition = new Vector3((float)width/2 - .6f, 1, (float)height/2 +.4f);
+        // floor.transform.localPosition = new Vector3((float)width/2 - .6f, 1, (float)height/2 +.4f);
+        floor.transform.localPosition = new Vector3((float)width/2, 0, (float)height/2);
         
         timer = timeToUpdate;
 
@@ -163,8 +166,10 @@ public class AgentController : MonoBehaviour
                     if(direction != Vector3.zero) robotsCaja[agent.Key].transform.rotation = Quaternion.LookRotation(direction);
                 }
                 else {
-                    agents[agent.Key].transform.localPosition = interpolated;
-                    if(direction != Vector3.zero) agents[agent.Key].transform.rotation = Quaternion.LookRotation(direction);
+                    if(agents[agent.Key].activeInHierarchy) {
+                        agents[agent.Key].transform.localPosition = interpolated;
+                        if(direction != Vector3.zero) agents[agent.Key].transform.rotation = Quaternion.LookRotation(direction);
+                    } 
                 }
                 
             }
@@ -184,7 +189,7 @@ public class AgentController : MonoBehaviour
         else 
         {
             StartCoroutine(GetRobotsData());
-            // StartCoroutine(GetCajasData());
+            //StartCoroutine(GetCajasData());
         }
     }
 
@@ -232,7 +237,7 @@ public class AgentController : MonoBehaviour
 
             foreach(RobotData robot in robotsData.positions)
             {
-                Vector3 newRobotPosition = new Vector3(robot.x, robot.y, robot.z);
+                Vector3 newRobotPosition = new Vector3(robot.x, robot.y + .025f, robot.z);
                 
 
                     if(!started)
@@ -292,8 +297,8 @@ public class AgentController : MonoBehaviour
     //                     if(currPositions.TryGetValue(caja.id, out currentPosition))
     //                         prevPositions[caja.id] = currentPosition;
     //                     currPositions[caja.id] = newCajaPosition; 
-    //                     // if(agent.recogido) agents[agent.id].SetActive(false);
-    //                     // else agents[agent.id].SetActive(true);
+    //                     if(caja.status == 1) agents[caja.id].SetActive(false);
+    //                             else agents[caja.id].SetActive(true);
     //                 }
     //         }
 
@@ -317,7 +322,10 @@ public class AgentController : MonoBehaviour
 
             foreach(CajaData caja in cajasData.positions)
             {
-                Instantiate(cajaPrefab, new Vector3(caja.x, caja.y, caja.z), Quaternion.identity);
+                Instantiate(cajaPrefab, new Vector3(caja.x, caja.y + .125f, caja.z), Quaternion.identity);
+                // if(caja.status == 1) agents[caja.id].SetActive(false);
+                //         else agents[caja.id].SetActive(true);
+
             }
         }
     }
@@ -376,7 +384,7 @@ public class AgentController : MonoBehaviour
 
             foreach(AgentData puerta in puertasData.positions)
             {
-                Instantiate(puertaPrefab, new Vector3(puerta.x, puerta.y, puerta.z), Quaternion.identity);
+                Instantiate(puertaPrefab, new Vector3(puerta.x, puerta.y, puerta.z), puertaPrefab.transform.rotation);
             }
         }
     }
