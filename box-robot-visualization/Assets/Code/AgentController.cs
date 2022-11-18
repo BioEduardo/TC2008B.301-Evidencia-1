@@ -37,9 +37,9 @@ public class RobotData : AgentData
 
 public class CajaData : AgentData
 {
-    public bool recogido;
+    public bool status;
 
-    public CajaData(string id, float x, float y, float z, bool has_box) : base(id, x, y, z)
+    public CajaData(string id, float x, float y, float z, bool status) : base(id, x, y, z)
     {
         this.recogido = recogido;
     }
@@ -107,7 +107,7 @@ public class AgentController : MonoBehaviour
     Dictionary<string, GameObject> robots, paredes, cajas, puertas, estantes;
     Dictionary<string, Vector3> prevPositions, currPositions;
 
-    bool updated = false, started = false;
+    bool updated = false, started = false, startedBox = false;
 
     public GameObject robotPrefab, robotboxPrefab, paredesPrefab, cajaPrefab, estantePrefab, puertaPrefab, floor;
     public int NAgents, width, height, maxtime;
@@ -175,7 +175,7 @@ public class AgentController : MonoBehaviour
             Debug.Log(www.error);
         else 
         {
-            StartCoroutine(GetAgentsData());
+            StartCoroutine(GetRobotsData());
             StartCoroutine(GetCajasData());
         }
     }
@@ -253,28 +253,22 @@ public class AgentController : MonoBehaviour
             Debug.Log(www.error);
         else 
         {
-            agentsData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+            cajasData = JsonUtility.FromJson<CajasData>(www.downloadHandler.text);
+
+            Debug.Log("Caja Positions. " + cajasData.positions);
 
             foreach(AgentData agent in agentsData.positions)
             {
-                Vector3 newAgentPosition = new Vector3(agent.x, agent.y, agent.z);
-
-                    if(!started)
-                    {
-                        prevPositions[agent.id] = newAgentPosition;
-                        agents[agent.id] = Instantiate(cajaPrefab, newAgentPosition, Quaternion.identity);
-                    }
-                    else
-                    {
-                        Vector3 currentPosition = new Vector3();
-                        if(currPositions.TryGetValue(agent.id, out currentPosition))
-                            prevPositions[agent.id] = currentPosition;
-                        currPositions[agent.id] = newAgentPosition;
-                    }
+                Vector3 newCajaPosition = new Vector3(caja.x, caja.y, caja.z);
+                if (!startedBox){
+                    prevPositions[caja.id] = newCajaPosition;
+                    agents[caja.id] = Instantiate(cajaPrefab, new Vector3(caja.x, caja.y + .125f, caja.z), Quaternion.identity);
+                }
+                else{
+                    if (caja.status) agents[caja.id].SetActive(false);
+                }
             }
-
-            updated = true;
-            if(!started) started = true;
+            if (!startedBox) startedBox = true;
         }
     }
 

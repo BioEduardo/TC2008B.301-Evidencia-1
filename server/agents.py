@@ -76,6 +76,7 @@ class Robot(Agent):
 
     def recogerCaja(self, caja):
         caja.color = "white"
+        caja.status = True
         self.color = "orange"
         self.has_box = True
 
@@ -102,11 +103,8 @@ class Robot(Agent):
 # Representa al agente caja
 class Caja(Agent):
 
-    RECOGIDO = 1
-    NO_RECOGIDO = 0
-
     # Inicializa sus valores de instacia
-    def __init__(self, unique_id, model, init_status=NO_RECOGIDO):
+    def __init__(self, unique_id, model, init_status=False):
         super().__init__(unique_id, model)
         self.color = "red"
         self.status = init_status
