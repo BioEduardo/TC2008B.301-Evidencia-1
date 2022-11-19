@@ -109,7 +109,7 @@ public class AgentController : MonoBehaviour
     public Dictionary<string, GameObject> agents, robotsCaja;
     public Dictionary<string, Vector3> prevPositions, currPositions;
 
-    bool updated = false, started = false;
+    bool updated = false, started = false, startedBox = false;
 
     public GameObject robotPrefab, robotboxPrefab, paredesPrefab, cajaPrefab, estantePrefab, puertaPrefab, floor;
     public int NAgents, width, height, maxtime;
@@ -189,7 +189,7 @@ public class AgentController : MonoBehaviour
         else 
         {
             StartCoroutine(GetRobotsData());
-            //StartCoroutine(GetCajasData());
+            StartCoroutine(GetCajasData());
         }
     }
 
@@ -318,15 +318,20 @@ public class AgentController : MonoBehaviour
         {
             cajasData = JsonUtility.FromJson<CajasData>(www.downloadHandler.text);
 
-            Debug.Log(cajasData.positions);
+            Debug.Log("Caja Positions. " + cajasData.positions);
 
             foreach(CajaData caja in cajasData.positions)
             {
-                Instantiate(cajaPrefab, new Vector3(caja.x, caja.y + .125f, caja.z), Quaternion.identity);
-                // if(caja.status == 1) agents[caja.id].SetActive(false);
-                //         else agents[caja.id].SetActive(true);
-
+                Vector3 newCajaPosition = new Vector3(caja.x, caja.y, caja.z);
+                if (!startedBox){
+                    prevPositions[caja.id] = newCajaPosition;
+                    agents[caja.id] = Instantiate(cajaPrefab, new Vector3(caja.x, caja.y + .125f, caja.z), Quaternion.identity);
+                }
+                else{
+                    if (caja.status) agents[caja.id].SetActive(false);
+                }
             }
+            if (!startedBox) startedBox = true;
         }
     }
 
