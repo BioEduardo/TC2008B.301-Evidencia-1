@@ -35,18 +35,19 @@ public class RobotData : AgentData
     }
 }
 
+[Serializable]
 public class CajaData : AgentData
 {
-    public bool status;
+    public int status;
 
-    public CajaData(string id, float x, float y, float z, bool status) : base(id, x, y, z)
+    public CajaData(string id, float x, float y, float z, int status) : base(id, x, y, z)
     {
-        this.recogido = recogido;
+        this.status = status;
     }
 }
 
 [Serializable]
-public class EstanteData
+public class EstanteData : AgentData
 {
     public int boxes;
 
@@ -71,7 +72,7 @@ public class CajasData
 {
     public List<CajaData> positions;
 
-    public CajasData() => this.positions = new List<RobotData>();
+    public CajasData() => this.positions = new List<CajaData>();
 }
 
 [Serializable]
@@ -82,6 +83,7 @@ public class EstantesData
     public EstantesData() => this.positions = new List<EstanteData>();
 }
 
+[Serializable]
 public class AgentsData
 {
     public List<AgentData> positions;
@@ -104,8 +106,8 @@ public class AgentController : MonoBehaviour
     RobotsData robotsData;
     CajasData cajasData;
     EstantesData estanteData;
-    Dictionary<string, GameObject> robots, paredes, cajas, puertas, estantes;
-    Dictionary<string, Vector3> prevPositions, currPositions;
+    public Dictionary<string, GameObject> agents, robotsCaja;
+    public Dictionary<string, Vector3> prevPositions, currPositions;
 
     bool updated = false, started = false, startedBox = false;
 
@@ -116,19 +118,21 @@ public class AgentController : MonoBehaviour
 
     void Start()
     {
-        agentsData = new AgentsData();
-        obstacleData = new AgentsData();
+        robotsData = new RobotsData();
+        cajasData = new CajasData();
         puertasData = new AgentsData();
         paredesData = new AgentsData();
-        estantesData = new AgentsData();
+        estanteData = new EstantesData();
 
         prevPositions = new Dictionary<string, Vector3>();
         currPositions = new Dictionary<string, Vector3>();
 
         agents = new Dictionary<string, GameObject>();
+        robotsCaja = new Dictionary<string, GameObject>();
 
-        floor.transform.localScale = new Vector3((float)width/10, 1, (float)height/10);
-        floor.transform.localPosition = new Vector3((float)width/2-0.5f, 0, (float)height/2-0.5f);
+        floor.transform.localScale = new Vector3((float)width/2, 1, (float)height/2);
+        // floor.transform.localPosition = new Vector3((float)width/2 - .6f, 1, (float)height/2 +.4f);
+        floor.transform.localPosition = new Vector3((float)width/2, 0, (float)height/2);
         
         timer = timeToUpdate;
 
@@ -156,9 +160,18 @@ public class AgentController : MonoBehaviour
 
                 Vector3 interpolated = Vector3.Lerp(previousPosition, currentPosition, dt);
                 Vector3 direction = currentPosition - interpolated;
-
-                agents[agent.Key].transform.localPosition = interpolated;
-                if(direction != Vector3.zero) agents[agent.Key].transform.rotation = Quaternion.LookRotation(direction);
+                
+                if(robotsCaja[agent.Key].activeInHierarchy) {
+                    robotsCaja[agent.Key].transform.localPosition = interpolated;
+                    if(direction != Vector3.zero) robotsCaja[agent.Key].transform.rotation = Quaternion.LookRotation(direction);
+                }
+                else {
+                    if(agents[agent.Key].activeInHierarchy) {
+                        agents[agent.Key].transform.localPosition = interpolated;
+                        if(direction != Vector3.zero) agents[agent.Key].transform.rotation = Quaternion.LookRotation(direction);
+                    } 
+                }
+                
             }
 
             // float t = (timer / timeToUpdate);
@@ -219,23 +232,36 @@ public class AgentController : MonoBehaviour
             Debug.Log(www.error);
         else 
         {
-            agentsData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+            robotsData = JsonUtility.FromJson<RobotsData>(www.downloadHandler.text);
+            Debug.Log(www.downloadHandler.text);
 
-            foreach(AgentData agent in agentsData.positions)
+            foreach(RobotData robot in robotsData.positions)
             {
-                Vector3 newAgentPosition = new Vector3(agent.x, agent.y, agent.z);
+                Vector3 newRobotPosition = new Vector3(robot.x, robot.y + .025f, robot.z);
+                
 
                     if(!started)
                     {
-                        prevPositions[agent.id] = newAgentPosition;
-                        agents[agent.id] = Instantiate(agentPrefab, newAgentPosition, Quaternion.identity);
+                        prevPositions[robot.id] = newRobotPosition;
+                            agents[robot.id] = Instantiate(robotPrefab, newRobotPosition, Quaternion.identity);
+                            robotsCaja[robot.id] = Instantiate(robotboxPrefab, newRobotPosition, Quaternion.identity);
+                            robotsCaja[robot.id].SetActive(false);
                     }
                     else
                     {
                         Vector3 currentPosition = new Vector3();
-                        if(currPositions.TryGetValue(agent.id, out currentPosition))
-                            prevPositions[agent.id] = currentPosition;
-                        currPositions[agent.id] = newAgentPosition;
+                        if(currPositions.TryGetValue(robot.id, out currentPosition))
+                            prevPositions[robot.id] = currentPosition;
+                        currPositions[robot.id] = newRobotPosition;
+                        if(robot.has_box)
+                        {   
+                            agents[robot.id].SetActive(false);
+                            robotsCaja[robot.id].SetActive(true);
+                        }
+                        else {
+                            agents[robot.id].SetActive(true);
+                            robotsCaja[robot.id].SetActive(false);
+                        }
                     }
             }
 
@@ -243,6 +269,43 @@ public class AgentController : MonoBehaviour
             if(!started) started = true;
         }
     }
+
+    // IEnumerator GetCajasData() 
+    // {
+    //     UnityWebRequest www = UnityWebRequest.Get(serverUrl + getCajasEndpoint);
+    //     yield return www.SendWebRequest();
+ 
+    //     if (www.result != UnityWebRequest.Result.Success)
+    //         Debug.Log(www.error);
+    //     else 
+    //     {
+    //         cajasData = JsonUtility.FromJson<CajasData>(www.downloadHandler.text);
+    //         Debug.Log(cajasData.positions);
+
+    //         foreach(CajaData caja in cajasData.positions)
+    //         {
+    //             Vector3 newCajaPosition = new Vector3(caja.x, caja.y, caja.z);
+
+    //                 if(!started)
+    //                 {
+    //                     prevPositions[caja.id] = newCajaPosition;
+    //                     agents[caja.id] = Instantiate(cajaPrefab, newCajaPosition, Quaternion.identity);
+    //                 }
+    //                 else
+    //                 {
+    //                     Vector3 currentPosition = new Vector3();
+    //                     if(currPositions.TryGetValue(caja.id, out currentPosition))
+    //                         prevPositions[caja.id] = currentPosition;
+    //                     currPositions[caja.id] = newCajaPosition; 
+    //                     if(caja.status == 1) agents[caja.id].SetActive(false);
+    //                             else agents[caja.id].SetActive(true);
+    //                 }
+    //         }
+
+    //         updated = true;
+    //         if(!started) started = true;
+    //     }
+    // }
 
     IEnumerator GetCajasData() 
     {
@@ -257,7 +320,7 @@ public class AgentController : MonoBehaviour
 
             Debug.Log("Caja Positions. " + cajasData.positions);
 
-            foreach(AgentData agent in agentsData.positions)
+            foreach(CajaData caja in cajasData.positions)
             {
                 Vector3 newCajaPosition = new Vector3(caja.x, caja.y, caja.z);
                 if (!startedBox){
@@ -281,13 +344,13 @@ public class AgentController : MonoBehaviour
             Debug.Log(www.error);
         else 
         {
-            obstacleData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+            estanteData = JsonUtility.FromJson<EstantesData>(www.downloadHandler.text);
 
-            Debug.Log(obstacleData.positions);
+            Debug.Log(estanteData.positions);
 
-            foreach(AgentData obstacle in obstacleData.positions)
+            foreach(EstanteData estante in estanteData.positions)
             {
-                Instantiate(estantePrefab, new Vector3(obstacle.x, obstacle.y, obstacle.z), Quaternion.identity);
+                Instantiate(estantePrefab, new Vector3(estante.x, estante.y, estante.z), estantePrefab.transform.rotation);
             }
         }
     }
@@ -301,11 +364,11 @@ public class AgentController : MonoBehaviour
             Debug.Log(www.error);
         else 
         {
-            obstacleData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+            paredesData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+            Debug.Log(paredesData.positions);
+        
 
-            Debug.Log(obstacleData.positions);
-
-            foreach(AgentData obstacle in obstacleData.positions)
+            foreach(AgentData obstacle in paredesData.positions)
             {
                 Instantiate(paredesPrefab, new Vector3(obstacle.x, obstacle.y, obstacle.z), Quaternion.identity);
             }
@@ -321,13 +384,12 @@ public class AgentController : MonoBehaviour
             Debug.Log(www.error);
         else 
         {
-            obstacleData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+            puertasData = JsonUtility.FromJson<AgentsData>(www.downloadHandler.text);
+            Debug.Log(puertasData.positions);
 
-            Debug.Log(obstacleData.positions);
-
-            foreach(AgentData obstacle in obstacleData.positions)
+            foreach(AgentData puerta in puertasData.positions)
             {
-                Instantiate(puertaPrefab, new Vector3(obstacle.x, obstacle.y, obstacle.z), Quaternion.identity);
+                Instantiate(puertaPrefab, new Vector3(puerta.x, puerta.y, puerta.z), puertaPrefab.transform.rotation);
             }
         }
     }

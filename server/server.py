@@ -30,7 +30,7 @@ def initModel():
         currentStep = 0
 
         print(request.form)
-        print(number_agents, width, height)
+        print(cajas, ancho, alto)
         randomModel = AlmacenModelo(tiempoMaximo, alto, ancho, cajas)
 
         return jsonify({"message":"Parameters recieved, model initiated."})
@@ -40,7 +40,7 @@ def getRobots():
     global randomModel
 
     if request.method == 'GET':
-        robotPositions = [{"id": str(a.unique_id), "x": x, "y":1, "z":z, "has_box":a.has_box} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Robot)]
+        robotPositions = [{"id": str(agent.unique_id), "x": x, "y":0, "z":z, "has_box":agent.has_box} for (a, x, z) in randomModel.grid.coord_iter() for agent in a if isinstance(agent, Robot)]
 
         return jsonify({'positions':robotPositions})
 
@@ -49,7 +49,7 @@ def getEstantes():
     global randomModel
 
     if request.method == 'GET':
-        estantePositions = [{"id": str(a.unique_id), "x": x, "y":1, "z":z, "status":a.current_boxes} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Estante)]
+        estantePositions = [{"id": str(agent.unique_id), "x": x, "y":0, "z":z, "status":agent.current_boxes} for (a, x, z) in randomModel.grid.coord_iter() for agent in a if isinstance(agent, Estante)]
 
         return jsonify({'positions':estantePositions})
 
@@ -58,17 +58,16 @@ def getCajas():
     global randomModel
 
     if request.method == 'GET':
-        cajaPosition = [{"id": str(a.unique_id), "x": x, "y":1, "z":z, "status":a.status} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Caja)]
+        cajaPositions = [{"id": str(agent.unique_id), "x": x, "y":0, "z":z, "status":agent.status} for (a, x, z) in randomModel.grid.coord_iter() for agent in a if isinstance(agent, Caja)]
 
-        return jsonify({'positions':cajaPosition})
+        return jsonify({'positions':cajaPositions})
 
 @app.route('/getPuertas', methods=['GET'])
 def getPuertas():
     global randomModel
 
     if request.method == 'GET':
-        puertasPosition = [{"id": str(a.unique_id), "x": x, "y":1, "z":z} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Puerta)]
-
+        puertasPosition = [{"id": str(agent.unique_id), "x": x, "y":0, "z":z} for (a, x, z) in randomModel.grid.coord_iter() for agent in a if isinstance(agent, Puerta) ]
         return jsonify({'positions':puertasPosition})
 
 @app.route('/getParedes', methods=['GET'])
@@ -76,8 +75,7 @@ def getParedes():
     global randomModel
 
     if request.method == 'GET':
-        paredesPosition = [{"id": str(a.unique_id), "x": x, "y":1, "z":z} for (a, x, z) in randomModel.grid.coord_iter() if isinstance(a, Pared)]
-
+        paredesPosition = [{"id": str(agent.unique_id), "x": x, "y":0, "z":z} for (a, x, z) in randomModel.grid.coord_iter() for agent in a if isinstance(agent, Pared) ]
         return jsonify({'positions':paredesPosition})
 
 @app.route('/update', methods=['GET'])
