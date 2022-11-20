@@ -38,9 +38,9 @@ public class RobotData : AgentData
 [Serializable]
 public class CajaData : AgentData
 {
-    public int status;
+    public bool status;
 
-    public CajaData(string id, float x, float y, float z, int status) : base(id, x, y, z)
+    public CajaData(string id, float x, float y, float z, bool status) : base(id, x, y, z)
     {
         this.status = status;
     }
@@ -108,6 +108,9 @@ public class AgentController : MonoBehaviour
     EstantesData estanteData;
     public Dictionary<string, GameObject> agents, robotsCaja;
     public Dictionary<string, Vector3> prevPositions, currPositions;
+
+    // Mantiene el numero de cajas dibujadas en un estante dado su id
+    public Dictionary<string, int> cajasEnEstante;
 
     bool updated = false, started = false, startedBox = false;
 
@@ -190,6 +193,7 @@ public class AgentController : MonoBehaviour
         {
             StartCoroutine(GetRobotsData());
             StartCoroutine(GetCajasData());
+            StartCoroutine(UpdateEstantesData());
         }
     }
 
@@ -347,10 +351,36 @@ public class AgentController : MonoBehaviour
             estanteData = JsonUtility.FromJson<EstantesData>(www.downloadHandler.text);
 
             Debug.Log(estanteData.positions);
+            cajasEnEstante = new Dictionary<string, int>();
 
             foreach(EstanteData estante in estanteData.positions)
             {
+                // Registra el id del estante en el diccionario de cantidad de cajas
+                cajasEnEstante.Add(estante.id, 0);
                 Instantiate(estantePrefab, new Vector3(estante.x, estante.y, estante.z), estantePrefab.transform.rotation);
+            }
+        }
+    }
+
+    IEnumerator UpdateEstantesData() 
+    {
+        UnityWebRequest www = UnityWebRequest.Get(serverUrl + getEstantesEndpoint);
+        yield return www.SendWebRequest();
+ 
+        if (www.result != UnityWebRequest.Result.Success)
+            Debug.Log(www.error);
+        else 
+        {
+            estanteData = JsonUtility.FromJson<EstantesData>(www.downloadHandler.text);
+            foreach (var estante in estanteData.positions) {
+                // Crea cajas mientras no se haya alcanzado el numero real de cajas de la simulacion
+                while (cajasEnEstante[estante.id] < estante.boxes) {
+                    Instantiate(cajaPrefab,
+                                new Vector3(estante.x,
+                                            estante.y + 0.25f * cajasEnEstante[estante.id] + .125f, estante.z),
+                                Quaternion.identity);
+                    cajasEnEstante[estante.id]++;
+                }
             }
         }
     }
