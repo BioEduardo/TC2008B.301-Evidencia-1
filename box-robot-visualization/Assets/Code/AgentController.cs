@@ -400,7 +400,7 @@ public class AgentController : MonoBehaviour
 
             foreach(AgentData obstacle in paredesData.positions)
             {
-                Instantiate(paredesPrefab, new Vector3(obstacle.x, obstacle.y, obstacle.z), Quaternion.identity);
+                Instantiate(paredesPrefab, new Vector3(obstacle.x, obstacle.y + 0.5f, obstacle.z), Quaternion.identity);
             }
         }
     }
