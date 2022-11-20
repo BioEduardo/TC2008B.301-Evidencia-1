@@ -377,7 +377,7 @@ public class AgentController : MonoBehaviour
                 while (cajasEnEstante[estante.id] < estante.boxes) {
                     Instantiate(cajaPrefab,
                                 new Vector3(estante.x,
-                                            estante.y + 0.25f * cajasEnEstante[estante.id] + .125f, estante.z),
+                                            estante.y + 0.125f * cajasEnEstante[estante.id] + .125f, estante.z),
                                 Quaternion.identity);
                     cajasEnEstante[estante.id]++;
                 }
