@@ -1,6 +1,16 @@
-# TC2008B. Sistemas Multiagentes y Gráficas Computacionales
-# Python flask server to interact with Unity. Based on the code provided by Sergio Ruiz.
+#----------------------------------------------------------
+# Evidencia 1. Actividad Integradora
+# Python flask server to interact with Unity. Based on the 
+# code provided by Sergio Ruiz.
 # Octavio Navarro. October 2021
+# 
+# Date: 21-Nov-2022
+# Authors:
+#           Eduardo Joel Cortez Valente A01746664
+#           Paulo Ogando Gulias A01751587
+#           David Damián Galán A01752785
+#           José Ángel García Gómez A01745865
+#----------------------------------------------------------
 
 from flask import Flask, request, jsonify
 from model import *

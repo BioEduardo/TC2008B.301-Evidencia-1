@@ -1,11 +1,14 @@
 #----------------------------------------------------------
-# M1. Actividad
-# Este programa representa al modela de limpieza de habitacion
+# Evidencia 1. Actividad Integradora
+# Este programa representa al modelo de ordenar cajas en un
+# almacen
 # 
-# Date: 11-Nov-2022
+# Date: 21-Nov-2022
 # Authors:
 #           Eduardo Joel Cortez Valente A01746664
 #           Paulo Ogando Gulias A01751587
+#           David Damián Galán A01752785
+#           José Ángel García Gómez A01745865
 #----------------------------------------------------------
 
 from mesa import Model
@@ -15,9 +18,20 @@ from agents import *
 import math
 
 class AlmacenModelo(Model):
-
-    # Inicializa el modelo. Agrega los agentes
+    """ 
+    Crea el modelo con paredes, puertas, cajas, estantes y robots
+    Args:
+        N: Number of agents in the simulation
+        height, width: The size of the grid to model
+    """
     def __init__(self, tiempoMaximo, width, height, num_box):
+        """
+        Inicializa el modelo. Como argumentos de entrada, requiere:
+            - tiempoMaximo: Un tiempo maximo de ejecución
+            - width: Un ancho
+            - height: Un largo
+            - num_box: La cantidad inicial de cajas en el almacen
+        """
         self.largo = width
         self.ancho = height
         self.max_time = tiempoMaximo - 2 
@@ -87,6 +101,10 @@ class AlmacenModelo(Model):
                 c += 1
 
     def check_steps(self):
+        """
+        Coteja que no se haya llegado al numero maximo de pasos y 
+        que no se hayan recogido todas las cajas
+        """
         if self.cont_time == self.max_time:
             self.running = False
         elif self.boxes_recolected == self.num_box:
@@ -94,8 +112,8 @@ class AlmacenModelo(Model):
         else:
             self.cont_time += 1
 
-    # Representa un paso del modelo
     def step(self):
+        '''Advance the model by one step.'''
         self.check_steps()
         print(self.pos_estantes)
         self.schedule.step()

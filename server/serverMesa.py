@@ -1,12 +1,14 @@
 #----------------------------------------------------------
-# M1. Actividad
+# Evidencia 1. Actividad Integradora
 # Este programa grafica visualmente el modelo y los agentes
-# interacturando
+# interacturando en Mesa
 # 
-# Date: 11-Nov-2022
+# Date: 21-Nov-2022
 # Authors:
 #           Eduardo Joel Cortez Valente A01746664
 #           Paulo Ogando Gulias A01751587
+#           David Damián Galán A01752785
+#           José Ángel García Gómez A01745865
 #----------------------------------------------------------
 import mesa
 from model import AlmacenModelo
