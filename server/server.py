@@ -59,7 +59,7 @@ def getEstantes():
     global randomModel
 
     if request.method == 'GET':
-        estantePositions = [{"id": str(agent.unique_id), "x": x, "y":0, "z":z, "status":agent.current_boxes} for (a, x, z) in randomModel.grid.coord_iter() for agent in a if isinstance(agent, Estante)]
+        estantePositions = [{"id": str(agent.unique_id), "x": x, "y":0, "z":z, "boxes":agent.current_boxes} for (a, x, z) in randomModel.grid.coord_iter() for agent in a if isinstance(agent, Estante)]
 
         return jsonify({'positions':estantePositions})
 
