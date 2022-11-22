@@ -12,6 +12,8 @@ using UnityEngine.Networking;
 [Serializable]
 public class AgentData
 {
+    //Clase principal de los agentes, la cual guarda el id y la posicion de los agentes
+    //creados en el modelo
     public string id;
     public float x, y, z;
 
@@ -27,6 +29,8 @@ public class AgentData
 [Serializable]
 public class RobotData : AgentData
 {
+    //Clase del Agente Robot, que hereda de la clase principal y crea el booleano que indica
+    //si el robot tiene una caja en sus manos
     public bool has_box;
 
     public RobotData(string id, float x, float y, float z, bool has_box) : base(id, x, y, z)
@@ -38,6 +42,8 @@ public class RobotData : AgentData
 [Serializable]
 public class CajaData : AgentData
 {
+    //Clase del Agente caja, que hereda de la clase principal y crea el booleano que indica
+    //si la caja ya fue recogida o no
     public bool status;
 
     public CajaData(string id, float x, float y, float z, bool status) : base(id, x, y, z)
@@ -49,6 +55,8 @@ public class CajaData : AgentData
 [Serializable]
 public class EstanteData : AgentData
 {
+    //Clase del Agente estante, que hereda de la clase principal y crea el entero que indica
+    //cuantas cajas tiene actualmente el estante
     public int boxes;
 
     public EstanteData(string id, float x, float y, float z, int boxes) : base(id, x, y, z)
@@ -61,6 +69,7 @@ public class EstanteData : AgentData
 
 public class RobotsData
 {
+    //Clase que permite guardar las posiciones de los agentes Robot, asi como tambien actualizarlas
     public List<RobotData> positions;
 
     public RobotsData() => this.positions = new List<RobotData>();
@@ -70,6 +79,7 @@ public class RobotsData
 
 public class CajasData
 {
+    //Clase que permite guardar las posiciones de los agentes Caja, asi como tambien actualizarlas
     public List<CajaData> positions;
 
     public CajasData() => this.positions = new List<CajaData>();
@@ -78,6 +88,7 @@ public class CajasData
 [Serializable]
 public class EstantesData
 {
+    //Clase que permite guardar las posiciones de los agentes Estante, asi como tambien actualizarlas
     public List<EstanteData> positions;
 
     public EstantesData() => this.positions = new List<EstanteData>();
@@ -86,6 +97,7 @@ public class EstantesData
 [Serializable]
 public class AgentsData
 {
+    //Clase que permite guardar las posiciones de los agentes Pared y Puerta, asi como tambien actualizarlas
     public List<AgentData> positions;
 
     public AgentsData() => this.positions = new List<AgentData>();
@@ -93,8 +105,11 @@ public class AgentsData
 
 public class AgentController : MonoBehaviour
 {
+    //Clase que permitira asignar los objetos al controlador, asi como inicializar las rutas de acceso
+    //a los metodos del modelo
     // private string url = "https://agents.us-south.cf.appdomain.cloud/";
     string serverUrl = "http://localhost:8585";
+    //Rutas de acceso
     string getRobotsEndpoint = "/getRobots";
     string getEstantesEndpoint = "/getEstantes";
     string getCajasEndpoint = "/getCajas";
@@ -102,11 +117,14 @@ public class AgentController : MonoBehaviour
     string getParedesEndpoint = "/getParedes";
     string sendConfigEndpoint = "/init";
     string updateEndpoint = "/update";
+    //Listas con las posiciones de los agentes
     AgentsData puertasData, paredesData;
     RobotsData robotsData;
     CajasData cajasData;
     EstantesData estanteData;
+    //Listas de los gameobjects que se instanciaran en unity
     public Dictionary<string, GameObject> agents, robotsCaja;
+    //Lista de las posisciones que se iran actualizando
     public Dictionary<string, Vector3> prevPositions, currPositions;
 
     // Mantiene el numero de cajas dibujadas en un estante dado su id
@@ -121,6 +139,8 @@ public class AgentController : MonoBehaviour
 
     void Start()
     {
+        //Metodo que se llama al inicio de la simulacion, dando las posiciones de los agentes, creando los diccionarios
+        //y escalando el suelo al tamaño del modelo
         robotsData = new RobotsData();
         cajasData = new CajasData();
         puertasData = new AgentsData();
@@ -134,7 +154,6 @@ public class AgentController : MonoBehaviour
         robotsCaja = new Dictionary<string, GameObject>();
 
         floor.transform.localScale = new Vector3((float)width/2, 1, (float)height/2);
-        // floor.transform.localPosition = new Vector3((float)width/2 - .6f, 1, (float)height/2 +.4f);
         floor.transform.localPosition = new Vector3((float)width/2, 0, (float)height/2);
         
         timer = timeToUpdate;
@@ -144,6 +163,8 @@ public class AgentController : MonoBehaviour
 
     private void Update() 
     {
+        //MEtodo que se llama cada frame, este metodo actualiza las posiciones de los agentes moviles,
+        //asi como tambien actualiza el modelo de los robots y desaparece las cajas recogidas
         if(timer < 0)
         {
             timer = timeToUpdate;
@@ -164,11 +185,12 @@ public class AgentController : MonoBehaviour
                 Vector3 interpolated = Vector3.Lerp(previousPosition, currentPosition, dt);
                 Vector3 direction = currentPosition - interpolated;
                 
+                //Vertifica si el robot tiene una caja. Si la tiene, activa el prefab del robot con caja
                 if(robotsCaja[agent.Key].activeInHierarchy) {
                     robotsCaja[agent.Key].transform.localPosition = interpolated;
                     if(direction != Vector3.zero) robotsCaja[agent.Key].transform.rotation = Quaternion.LookRotation(direction);
                 }
-                else {
+                else { // Funciona para desaparecer las cajas que ya no deben estar activas
                     if(agents[agent.Key].activeInHierarchy) {
                         agents[agent.Key].transform.localPosition = interpolated;
                         if(direction != Vector3.zero) agents[agent.Key].transform.rotation = Quaternion.LookRotation(direction);
@@ -184,6 +206,7 @@ public class AgentController : MonoBehaviour
  
     IEnumerator UpdateSimulation()
     {
+        //Metodo que llama los Datos de los robots que se deben actualizar cada frame
         UnityWebRequest www = UnityWebRequest.Get(serverUrl + updateEndpoint);
         yield return www.SendWebRequest();
  
@@ -199,6 +222,8 @@ public class AgentController : MonoBehaviour
 
     IEnumerator SendConfiguration()
     {
+        //Corutina que envia los datos de las configuracion inicial al modelo, posteriormente
+        //inicia las corutinas para instanciar todos los agentes
         WWWForm form = new WWWForm();
 
         form.AddField("NAgents", NAgents.ToString());
@@ -229,6 +254,9 @@ public class AgentController : MonoBehaviour
 
     IEnumerator GetRobotsData() 
     {
+        //Corutina que envia y recibe los datos del agente robot, instanciandolos en las 
+        //posiciones iniciales y actualizandolas una vez que sea llamada la corutina
+        //en el metodo update
         UnityWebRequest www = UnityWebRequest.Get(serverUrl + getRobotsEndpoint);
         yield return www.SendWebRequest();
  
@@ -274,45 +302,10 @@ public class AgentController : MonoBehaviour
         }
     }
 
-    // IEnumerator GetCajasData() 
-    // {
-    //     UnityWebRequest www = UnityWebRequest.Get(serverUrl + getCajasEndpoint);
-    //     yield return www.SendWebRequest();
- 
-    //     if (www.result != UnityWebRequest.Result.Success)
-    //         Debug.Log(www.error);
-    //     else 
-    //     {
-    //         cajasData = JsonUtility.FromJson<CajasData>(www.downloadHandler.text);
-    //         Debug.Log(cajasData.positions);
-
-    //         foreach(CajaData caja in cajasData.positions)
-    //         {
-    //             Vector3 newCajaPosition = new Vector3(caja.x, caja.y, caja.z);
-
-    //                 if(!started)
-    //                 {
-    //                     prevPositions[caja.id] = newCajaPosition;
-    //                     agents[caja.id] = Instantiate(cajaPrefab, newCajaPosition, Quaternion.identity);
-    //                 }
-    //                 else
-    //                 {
-    //                     Vector3 currentPosition = new Vector3();
-    //                     if(currPositions.TryGetValue(caja.id, out currentPosition))
-    //                         prevPositions[caja.id] = currentPosition;
-    //                     currPositions[caja.id] = newCajaPosition; 
-    //                     if(caja.status == 1) agents[caja.id].SetActive(false);
-    //                             else agents[caja.id].SetActive(true);
-    //                 }
-    //         }
-
-    //         updated = true;
-    //         if(!started) started = true;
-    //     }
-    // }
-
     IEnumerator GetCajasData() 
     {
+        //Corutina que instancia las cajas en su posicion inicial, y que posteriomente 
+        //desactivara la instancia de la caja cuando esta sea recogida
         UnityWebRequest www = UnityWebRequest.Get(serverUrl + getCajasEndpoint);
         yield return www.SendWebRequest();
  
@@ -341,6 +334,7 @@ public class AgentController : MonoBehaviour
 
     IEnumerator GetEstantesData() 
     {
+        //Corutina que recibe las posiciones de los estantes y los instancia
         UnityWebRequest www = UnityWebRequest.Get(serverUrl + getEstantesEndpoint);
         yield return www.SendWebRequest();
  
@@ -364,6 +358,8 @@ public class AgentController : MonoBehaviour
 
     IEnumerator UpdateEstantesData() 
     {
+        //Corutina que actualiza el estado de cada estanteria, sumandole altura a las cajas
+        //para simular su sobreposicion en una estanteria mientras esta tenga espacio
         UnityWebRequest www = UnityWebRequest.Get(serverUrl + getEstantesEndpoint);
         yield return www.SendWebRequest();
  
@@ -387,6 +383,7 @@ public class AgentController : MonoBehaviour
 
     IEnumerator GetParedesData() 
     {
+        //Corutina que instancia las paredes del modelo
         UnityWebRequest www = UnityWebRequest.Get(serverUrl + getParedesEndpoint);
         yield return www.SendWebRequest();
  
@@ -407,6 +404,7 @@ public class AgentController : MonoBehaviour
 
     IEnumerator GetPuertasData() 
     {
+        //Corutina que instancia la pueta del modelo
         UnityWebRequest www = UnityWebRequest.Get(serverUrl + getPuertasEndpoint);
         yield return www.SendWebRequest();
  
